@@ -42,13 +42,17 @@ def robust_dynamic_range_db(data: np.ndarray, sample_rate: int, window_ms: float
 
 def transient_index_db(data: np.ndarray, sample_rate: int) -> float:
     x = to_mono(data)
-    fast = _envelope_db(x, sample_rate, 2.0)
-    slow = _envelope_db(x, sample_rate, 30.0)
-    delta = fast - slow
-    finite = delta[np.isfinite(delta)]
+    slow = _moving_rms(x, round(sample_rate * 0.030))
+    peak_to_body_db = 20.0 * np.log10(
+        np.maximum(np.abs(x), _EPS) / np.maximum(slow, _EPS)
+    )
+    finite = peak_to_body_db[np.isfinite(peak_to_body_db)]
     if finite.size == 0:
         return 0.0
-    return float(np.percentile(finite, 90.0))
+
+    # A high percentile captures attack prominence while avoiding a single-sample
+    # maximum as the primary statistic.
+    return float(np.percentile(finite, 99.95))
 
 
 def _apply_gain_envelope(data: np.ndarray, gain_db: np.ndarray) -> np.ndarray:
@@ -94,9 +98,12 @@ def match_dynamics(
     transient_gain_db = float(np.clip(ref_transient - tgt_transient, -abs(max_transient_gain_db), abs(max_transient_gain_db)))
 
     if abs(transient_gain_db) > 1e-6:
-        fast = _envelope_db(to_mono(y), sr, 2.0)
-        slow = _envelope_db(to_mono(y), sr, 30.0)
-        transient_shape = np.maximum(0.0, fast - slow)
+        mono_y = to_mono(y)
+        slow = _moving_rms(mono_y, round(sr * 0.030))
+        transient_shape = np.maximum(
+            0.0,
+            20.0 * np.log10(np.maximum(np.abs(mono_y), _EPS) / np.maximum(slow, _EPS)),
+        )
         norm = float(np.percentile(transient_shape, 95.0))
         if norm > 1e-6:
             weight = np.clip(transient_shape / norm, 0.0, 1.0)
