@@ -66,3 +66,19 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+# Python research harness
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Local research audio/results: never commit programme material by default
+*.wav
+*.flac
+*.aif
+*.aiff
+results/
+research-output/
