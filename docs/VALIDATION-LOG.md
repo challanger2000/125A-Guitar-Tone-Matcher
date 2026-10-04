@@ -106,3 +106,70 @@ Interpretation:
 The research chain clearly outperforms the unprocessed target on spectral similarity while recovering most dynamics disturbed by the EQ stage.
 
 This is encouraging but not a product-quality proof. More independent guitar/reference pairs are required, and texture descriptors need broader validation before the nonlinear stage can be considered useful.
+
+
+## 2026-10-05 — improved target performance (new FLAC)
+
+Purpose:
+- repeat the real two-performance comparison with a target riff whose register/articulation is closer to the reference;
+- test whether the current chain remains useful on a musically better-matched target.
+
+Local fixture:
+- reference: previous processed high-gain guitar recording;
+- target: new processed guitar FLAC;
+- both 44.1 kHz and same duration;
+- fixture audio remains local/private.
+
+Observed results:
+
+### Spectral distance
+Mean level-independent spectral-envelope error, 80 Hz–12 kHz:
+
+- target before processing: approximately **4.86 dB**;
+- after initial EQ match: approximately **0.94 dB**;
+- after EQ + dynamics/transient stage: approximately **0.94 dB**;
+- after final residual EQ: approximately **0.66 dB**.
+
+This is about an **86% reduction** in the measured spectral-envelope error relative to the unprocessed target.
+
+### Macro dynamics
+Robust short-time dynamic range:
+
+- reference: approximately **3.58 dB**;
+- target before processing: approximately **2.70 dB**;
+- after initial EQ match: approximately **1.84 dB**;
+- after dynamics/transient stage: approximately **2.79 dB**;
+- after final residual EQ: approximately **2.63 dB**.
+
+The controller reached the current maximum expansion ratio (**1.60x**), indicating the target remains dynamically flatter than the reference after spectral correction.
+
+### Transient index
+Peak-to-body transient statistic:
+
+- reference: approximately **10.79 dB**;
+- target before processing: approximately **8.76 dB**;
+- after initial EQ match: approximately **9.81 dB**;
+- after dynamics/transient stage: approximately **9.85 dB**;
+- after final residual EQ: approximately **9.90 dB**.
+
+The current transient stage improves the mismatch only modestly and remains an active research area.
+
+### Texture / saturation search
+- reference crest factor: approximately **14.61 dB**;
+- target before: approximately **12.39 dB**;
+- target after dynamics: approximately **13.41 dB**;
+- reference 3–12 kHz flatness: approximately **-21.69 dB**;
+- target before: approximately **-17.71 dB**;
+- target after dynamics: approximately **-21.55 dB**.
+
+The bounded saturation search again selected **NONE**.
+
+Interpretation:
+- the high-band texture mismatch was largely corrected by spectral/dynamic processing;
+- adding the currently tested nonlinear families did not improve the defined texture score;
+- nonlinear processing remains optional and must continue to justify itself per fixture.
+
+Current conclusion:
+- the improved target performance produces the strongest real two-performance result so far;
+- spectral matching is already highly effective;
+- the remaining measurable gap is dominated more by dynamics/attack than by the current texture descriptors.
