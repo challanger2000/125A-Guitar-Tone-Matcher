@@ -39,13 +39,19 @@ def derive_match_curve(
     delta_db = gaussian_filter1d(delta_db, smoothing_sigma_bins, mode="nearest")
 
     valid = (ref_f >= min_frequency_hz) & (ref_f <= min(max_frequency_hz, sample_rate * 0.5))
+
+    # Tone matching must be independent of overall loudness. Remove the robust
+    # broadband offset before limiting the shape correction.
+    if np.any(valid):
+        delta_db = delta_db - float(np.median(delta_db[valid]))
+
     delta_db = np.where(valid, delta_db, 0.0)
     delta_db = np.clip(delta_db, -abs(max_gain_db), abs(max_gain_db))
 
     return ref_f, delta_db
 
 
-def _minimum_phase_like_fir_from_curve(gain_db: np.ndarray, n_fft: int, fir_length: int) -> np.ndarray:
+def _linear_phase_fir_from_curve(gain_db: np.ndarray, n_fft: int, fir_length: int) -> np.ndarray:
     if fir_length < 3:
         raise ValueError("fir_length must be >= 3")
     linear = np.power(10.0, gain_db / 20.0)
