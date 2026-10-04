@@ -63,3 +63,34 @@ For every material stage:
 ## Licensing
 
 External repositories and papers may be used as research references. Incompatible source code is not copied into 125A products. Exact dependency and license decisions will be documented before any external code is integrated.
+
+
+## Offline baseline harness
+
+Install the research dependencies:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+Analyse one file:
+
+```bash
+python scripts/analyze.py "reference.wav" --json results/reference.json
+```
+
+Create the deterministic EQ-match baseline:
+
+```bash
+python scripts/eq_match.py "reference.wav" "target.wav" "results/target_eqmatch.wav" \
+  --report results/report.json \
+  --curve-csv results/match_curve.csv
+```
+
+Run the synthetic regression tests:
+
+```bash
+pytest -q
+```
+
+Local WAV/FLAC/AIFF files and research outputs are ignored by default and should not be committed to the public repository.
