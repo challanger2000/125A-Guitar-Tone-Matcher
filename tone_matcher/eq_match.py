@@ -92,7 +92,7 @@ def apply_match(
         max_gain_db=max_gain_db,
     )
 
-    fir = _minimum_phase_like_fir_from_curve(gain_db, n_fft=n_fft, fir_length=fir_length)
+    fir = _linear_phase_fir_from_curve(gain_db, n_fft=n_fft, fir_length=fir_length)
 
     x = np.asarray(target.data, dtype=np.float64)
     if x.ndim == 1:
