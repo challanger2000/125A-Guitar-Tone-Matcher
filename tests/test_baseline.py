@@ -62,3 +62,14 @@ def test_match_curve_ignores_global_level_difference() -> None:
     _, gain_db = derive_match_curve(x * 0.25, x, sr)
 
     assert float(np.max(np.abs(gain_db))) < 1e-9
+
+
+def test_short_audio_spectrum_is_supported() -> None:
+    sr = 44100
+    t = np.arange(2048) / sr
+    x = 0.1 * np.sin(2.0 * np.pi * 440.0 * t)
+
+    freqs, power = long_term_spectrum(x, sr, n_fft=8192)
+
+    assert freqs.shape == power.shape
+    assert np.isfinite(power).all()
