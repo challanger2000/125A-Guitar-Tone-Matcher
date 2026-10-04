@@ -52,3 +52,13 @@ def test_eq_baseline_reduces_known_spectral_error() -> None:
     after = spectral_error_db(reference, result.audio.data[:, 0], sr)
 
     assert after < before
+
+
+def test_match_curve_ignores_global_level_difference() -> None:
+    sr = 44100
+    rng = np.random.default_rng(125)
+    x = rng.standard_normal(sr * 2) * 0.05
+
+    _, gain_db = derive_match_curve(x * 0.25, x, sr)
+
+    assert float(np.max(np.abs(gain_db))) < 1e-9
