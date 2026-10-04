@@ -43,14 +43,19 @@ def long_term_spectrum(
     smoothing_sigma_bins: float = 6.0,
 ) -> tuple[np.ndarray, np.ndarray]:
     mono = to_mono(data)
+    if mono.size < 8:
+        raise ValueError("Audio is too short for spectral analysis")
+
+    frame_size = min(int(n_fft), int(mono.size))
     if hop is None:
-        hop = n_fft // 4
-    noverlap = max(0, n_fft - hop)
+        hop = max(1, frame_size // 4)
+    noverlap = min(frame_size - 1, max(0, frame_size - int(hop)))
+
     _, _, z = stft(
         mono,
         fs=sample_rate,
-        window=get_window("hann", n_fft, fftbins=True),
-        nperseg=n_fft,
+        window=get_window("hann", frame_size, fftbins=True),
+        nperseg=frame_size,
         noverlap=noverlap,
         nfft=n_fft,
         boundary=None,
