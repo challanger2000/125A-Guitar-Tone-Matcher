@@ -220,3 +220,41 @@ Interpretation:
 - quantile-distribution matching substantially reproduces the reference macro-dynamic distribution without requiring aligned performance;
 - transient reduction remains under-achieved and is the next clear subsystem to improve;
 - residual EQ can perturb dynamics again, so the final stage ordering / iteration policy still needs optimisation.
+
+
+## 2026-10-05 — stage-order comparison on separate target performance
+
+Reference:
+- real processed Amaranthe-style amp track.
+
+Target:
+- separate user guitar performance.
+
+Compared:
+1. unprocessed target;
+2. EQ-only baseline;
+3. current full chain;
+4. alternative stage orders.
+
+Best measured compromise:
+- initial EQ;
+- dynamics;
+- optional texture search;
+- residual EQ;
+- bounded second dynamics/transient pass.
+
+Measured distance to reference:
+
+| Variant | Spectral error | Dynamic-range error | Transient error | High-band flatness error |
+|---|---:|---:|---:|---:|
+| Original | 4.524 dB | 1.870 dB | 1.548 dB | 3.408 dB |
+| EQ only | 0.942 dB | 0.257 dB | 0.866 dB | 0.113 dB |
+| Previous full chain | 0.750 dB | 1.145 dB | 0.504 dB | 0.038 dB |
+| Iterated dynamics chain | **0.795 dB** | **0.281 dB** | **0.798 dB** | **0.037 dB** |
+
+Interpretation:
+- EQ-only is already a strong baseline;
+- the previous full chain improved spectral/texture/transient metrics but damaged macro-dynamic matching too much;
+- the iterated dynamics order retains almost all of EQ-only's dynamic accuracy while improving spectral and high-band texture similarity;
+- this order is the current preferred research pipeline;
+- additional complexity will be added only if it beats this baseline on multiple independent fixtures.
