@@ -19,6 +19,7 @@ class BandDynamics:
     reference_range_db: float
     target_range_db: float
     ratio: float
+    applied_strength: float
 
 
 @dataclass(frozen=True)
@@ -51,10 +52,24 @@ def _band_gain_db(
     target_band: np.ndarray,
     sr: int,
     max_gain_db: float,
-) -> tuple[np.ndarray, float, float, float]:
+) -> tuple[np.ndarray, float, float, float, float]:
     ref_range = robust_dynamic_range_db(reference_band, sr, window_ms=20.0)
     tgt_range = robust_dynamic_range_db(target_band, sr, window_ms=20.0)
-    ratio = 1.0 if tgt_range < 0.25 else float(np.clip(ref_range / tgt_range, 0.18, 1.80))
+
+    if tgt_range < 0.25:
+        raw_ratio = 1.0
+    else:
+        raw_ratio = float(np.clip(ref_range / tgt_range, 0.18, 1.80))
+
+    # Do not process bands whose measured dynamics are already close enough.
+    # Between 0.25 and 2 dB mismatch, fade the controller in gradually.
+    range_error = abs(ref_range - tgt_range)
+    if range_error <= 0.25:
+        strength = 0.0
+    else:
+        strength = float(np.clip((range_error - 0.25) / 1.75, 0.0, 1.0))
+
+    ratio = 1.0 + strength * (raw_ratio - 1.0)
 
     mono = to_mono(target_band)
     env = _moving_rms(mono, round(sr * 0.020))
@@ -65,7 +80,7 @@ def _band_gain_db(
     gain_db = (ratio - 1.0) * (env_db - center)
     gain_db = np.clip(gain_db, -abs(max_gain_db), abs(max_gain_db))
     gain_db = gaussian_filter1d(gain_db, sigma=max(1.0, sr * 0.004), mode="nearest")
-    return gain_db, ref_range, tgt_range, ratio
+    return gain_db, ref_range, tgt_range, ratio, strength
 
 
 def match_multiband_dynamics(
@@ -96,7 +111,7 @@ def match_multiband_dynamics(
         ref_band = _split_band(r, sr, low, high)
         tgt_band = _split_band(x, sr, low, high)
 
-        gain_db, ref_range, tgt_range, ratio = _band_gain_db(
+        gain_db, ref_range, tgt_range, ratio, strength = _band_gain_db(
             ref_band,
             tgt_band,
             sr,
@@ -111,6 +126,7 @@ def match_multiband_dynamics(
                 reference_range_db=ref_range,
                 target_range_db=tgt_range,
                 ratio=ratio,
+                applied_strength=strength,
             )
         )
 
