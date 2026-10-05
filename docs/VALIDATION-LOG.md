@@ -258,3 +258,28 @@ Interpretation:
 - the iterated dynamics order retains almost all of EQ-only's dynamic accuracy while improving spectral and high-band texture similarity;
 - this order is the current preferred research pipeline;
 - additional complexity will be added only if it beats this baseline on multiple independent fixtures.
+
+
+## 2026-10-05 — fine multiband refinement rejected
+
+Experiment:
+- replace the 6-band dynamics layout with a finer 9-band layout derived from paired DI/amp observations;
+- reduce allowed gain motion below 250 Hz to preserve palm-mute fundamentals;
+- compare against EQ-only and the existing 6-band matcher.
+
+Robustness check:
+- the finer layout improved high-band flatness and transient proximity slightly;
+- however, macro-dynamic results changed substantially depending on which active section of the long reference recording was used;
+- on a representative 35-second reference segment:
+  - EQ-only dynamic-range error: approximately **0.16 dB**;
+  - 6-band + transient error: approximately **1.74 dB**;
+  - 9-band + transient error: approximately **1.38 dB**;
+- therefore neither multiband result was robust enough on that segment to beat EQ-only overall.
+
+Decision:
+- the 9-band refinement is **rejected for current use** and has been reverted;
+- the key unresolved issue is **reference-section sensitivity**, not simply band count;
+- next research should estimate a stable reference profile from multiple active windows or automatically select comparable reference sections before deriving dynamics targets.
+
+Engineering consequence:
+- do not claim multiband dynamics as a general improvement until it wins across multiple reference windows and independent fixtures.
