@@ -41,3 +41,18 @@ def test_multiband_match_can_reduce_midband_dynamic_error() -> None:
     )
 
     assert after < before
+
+
+def test_multiband_stays_neutral_when_band_dynamics_already_match() -> None:
+    sr = 44100
+    rng = np.random.default_rng(125)
+    x = 0.03 * rng.standard_normal(sr * 3)
+
+    result = match_multiband_dynamics(
+        AudioBuffer(x[:, None], sr),
+        AudioBuffer(x[:, None], sr),
+    )
+
+    assert all(abs(b.ratio - 1.0) < 1e-12 for b in result.bands)
+    assert all(abs(b.applied_strength) < 1e-12 for b in result.bands)
+    assert np.max(np.abs(result.audio.data[:, 0] - x)) < 1e-6
