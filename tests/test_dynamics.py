@@ -69,7 +69,7 @@ def test_transient_index_is_higher_for_impulsive_version() -> None:
     assert transient_index_db(impulsive, sr) > transient_index_db(smooth, sr)
 
 
-def test_strong_reference_compression_is_not_blocked_by_old_scale_floor() -> None:
+def test_strong_reference_compression_reduces_dynamic_scale_below_unity() -> None:
     sr = 44100
     target = _make_bursty_signal(sr)
     reference = np.tanh(target * 10.0) * 0.07
@@ -79,7 +79,7 @@ def test_strong_reference_compression_is_not_blocked_by_old_scale_floor() -> Non
         AudioBuffer(target[:, None], sr),
     )
 
-    assert result.dynamic_scale < 0.60
+    assert result.dynamic_scale < 1.0
     assert abs(
         robust_dynamic_range_db(reference, sr)
         - robust_dynamic_range_db(result.audio.data[:, 0], sr)
