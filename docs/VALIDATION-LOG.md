@@ -320,3 +320,38 @@ Interpretation:
 Decision:
 - keep the multi-window framework;
 - revise the window score so articulation/density descriptors drive selection and tonal descriptors remain the target to be matched, not the criterion used to choose the reference passage.
+
+
+## 2026-10-05 — confidence-gated multiband dynamics
+
+Change:
+- each dynamics band now stays neutral when its reference/target dynamic-range mismatch is <= 0.25 dB;
+- larger mismatches fade in progressively instead of applying the full raw ratio immediately;
+- applied strength is reported per band for diagnostics.
+
+Real Amaranthe-reference comparison using the current selected reference profile:
+
+- EQ-only:
+  - spectral error: approximately **0.87 dB**;
+  - dynamic-range error: approximately **0.67 dB**;
+  - transient error: approximately **1.04 dB**;
+  - high-band flatness error: approximately **0.16 dB**.
+
+- confidence-gated multiband + transient:
+  - spectral error: approximately **0.87 dB**;
+  - dynamic-range error: approximately **0.28 dB**;
+  - transient error: approximately **0.96 dB**;
+  - high-band flatness error: approximately **0.16 dB**.
+
+Band behaviour in this comparison:
+- 60–120 Hz: neutral;
+- 120–250 Hz: strong correction;
+- 250–500 Hz: light correction;
+- 500–1000 Hz: moderate correction;
+- 1000–2500 Hz: neutral;
+- 2500–6000 Hz: light correction.
+
+Interpretation:
+- this is the first multiband version that improves dynamics materially over EQ-only while leaving already-matched bands untouched;
+- no spectral advantage is claimed from the dynamics stage;
+- the stage is retained because it adds measurable non-EQ behaviour without sacrificing the spectral match.
