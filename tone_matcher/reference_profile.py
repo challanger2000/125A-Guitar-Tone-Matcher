@@ -20,6 +20,8 @@ class ReferenceWindowScore:
     dynamic_error_db: float
     transient_error_db: float
     texture_error: float
+    activity_error: float
+    onset_density_error: float
     total_score: float
 
 
@@ -49,6 +51,41 @@ def _window_activity_db(data: np.ndarray) -> float:
     return float(20.0 * np.log10(peak))
 
 
+def _moving_rms(x: np.ndarray, window_samples: int) -> np.ndarray:
+    w = max(1, int(window_samples))
+    kernel = np.ones(w, dtype=np.float64) / w
+    return np.sqrt(np.maximum(np.convolve(x * x, kernel, mode="same"), _EPS))
+
+
+def _articulation_features(data: np.ndarray, sample_rate: int) -> tuple[float, float]:
+    mono = to_mono(data)
+    env = _moving_rms(mono, round(sample_rate * 0.010))
+    env_db = 20.0 * np.log10(np.maximum(env, _EPS))
+
+    peak_db = float(np.max(env_db))
+    active = env_db > (peak_db - 30.0)
+    activity_ratio = float(np.mean(active))
+
+    # Attack density from positive short-time envelope slopes. This intentionally
+    # avoids spectral/timbral information so window selection follows performance
+    # type rather than the tone that we are trying to transfer.
+    step = max(1, round(sample_rate * 0.005))
+    sampled = env_db[::step]
+    if sampled.size < 3:
+        return activity_ratio, 0.0
+
+    slope = np.diff(sampled)
+    active_slope = slope[np.isfinite(slope)]
+    if active_slope.size == 0:
+        return activity_ratio, 0.0
+
+    threshold = max(0.75, float(np.percentile(active_slope, 85.0)))
+    onsets = active_slope > threshold
+    duration_seconds = max(len(mono) / sample_rate, 1e-6)
+    onset_density_hz = float(np.count_nonzero(onsets) / duration_seconds)
+    return activity_ratio, onset_density_hz
+
+
 def select_reference_windows(
     reference: AudioBuffer,
     target: AudioBuffer,
@@ -72,6 +109,7 @@ def select_reference_windows(
 
     target_dyn = robust_dynamic_range_db(tgt, sr)
     target_tr = transient_index_db(tgt, sr)
+    target_activity, target_onset_density = _articulation_features(tgt, sr)
     target_tex = texture_features(tgt, sr)
 
     candidates: list[tuple[ReferenceWindowScore, np.ndarray]] = []
@@ -90,6 +128,8 @@ def select_reference_windows(
         if _window_activity_db(chunk) < activity_threshold_dbfs:
             continue
 
+        # Spectral/texture distances are retained for diagnostics only.
+        # They do NOT influence selection because tone is the thing we want to match.
         try:
             spec = _spectral_error_db(chunk, tgt, sr)
         except ValueError:
@@ -98,16 +138,24 @@ def select_reference_windows(
         dyn = abs(robust_dynamic_range_db(chunk, sr) - target_dyn)
         tr = abs(transient_index_db(chunk, sr) - target_tr)
 
+        activity, onset_density = _articulation_features(chunk, sr)
+        activity_error = abs(activity - target_activity)
+        onset_density_error = abs(onset_density - target_onset_density)
+
         tex = texture_features(chunk, sr)
         tex_error = (
             0.65 * abs(tex.crest_db - target_tex.crest_db)
             + 0.35 * abs(tex.high_band_flatness_db - target_tex.high_band_flatness_db)
         )
 
-        # Spectral shape is the primary selector; dynamics/transients/textural
-        # descriptors break ties so we prefer reference passages with similar
-        # articulation rather than only similar EQ.
-        total = spec + 0.35 * dyn + 0.20 * tr + 0.15 * tex_error
+        # Articulation-first score: dynamics, attack prominence, active-density
+        # and onset density only. No spectral or texture term is allowed here.
+        total = (
+            0.45 * dyn
+            + 0.25 * tr
+            + 4.0 * activity_error
+            + 0.08 * onset_density_error
+        )
 
         score = ReferenceWindowScore(
             start_seconds=start / sr,
@@ -116,6 +164,8 @@ def select_reference_windows(
             dynamic_error_db=dyn,
             transient_error_db=tr,
             texture_error=tex_error,
+            activity_error=activity_error,
+            onset_density_error=onset_density_error,
             total_score=float(total),
         )
         candidates.append((score, chunk.copy()))
@@ -125,9 +175,6 @@ def select_reference_windows(
 
     candidates.sort(key=lambda item: item[0].total_score)
     selected = candidates[: max(1, int(max_windows))]
-
-    # Concatenate several best windows. Downstream analyzers then see a robust
-    # profile instead of one potentially unrepresentative moment.
     selected_audio = np.concatenate([chunk for _, chunk in selected], axis=0)
 
     return ReferenceSelection(
