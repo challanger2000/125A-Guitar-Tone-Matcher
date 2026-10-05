@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from .audio import AudioBuffer
 from .dynamics import DynamicsMatchResult, match_dynamics
 from .eq_match import EqMatchResult, apply_match
+from .multiband import MultibandDynamicsResult, match_multiband_dynamics
 from .texture import TextureMatchResult, match_texture
 
 
@@ -12,39 +13,36 @@ from .texture import TextureMatchResult, match_texture
 class AdvancedMatchResult:
     audio: AudioBuffer
     initial_eq: EqMatchResult
-    dynamics: DynamicsMatchResult
-    texture: TextureMatchResult
-    residual_eq: EqMatchResult
+    multiband: MultibandDynamicsResult
     final_dynamics: DynamicsMatchResult
+    texture: TextureMatchResult
 
 
 def apply_advanced_match(reference: AudioBuffer, target: AudioBuffer) -> AdvancedMatchResult:
-    # 1) Large spectral correction.
+    # 1) Large, level-independent spectral correction.
     initial_eq = apply_match(reference, target)
 
-    # 2) Restore/match macro dynamics disturbed by the spectral correction.
-    dynamics = match_dynamics(reference, initial_eq.audio)
+    # 2) Match frequency-dependent dynamics. This is the first stage that
+    #    provides a clear measurable benefit beyond EQ-only on real fixtures.
+    multiband = match_multiband_dynamics(reference, initial_eq.audio)
 
-    # 3) Optional nonlinear texture search. "none" remains a valid result.
-    texture = match_texture(reference, dynamics.audio)
-
-    # 4) Small bounded residual spectral correction after nonlinear/dynamic stages.
-    residual_eq = apply_match(reference, texture.audio, max_gain_db=4.0)
-
-    # 5) Residual EQ can perturb the level distribution again. Run a bounded
-    #    second dynamics pass and transient correction at the very end.
+    # 3) Use the broadband dynamics block only as a bounded final
+    #    distribution/transient correction, after the per-band behaviour is set.
     final_dynamics = match_dynamics(
         reference,
-        residual_eq.audio,
-        max_dynamic_gain_db=8.0,
+        multiband.audio,
+        max_dynamic_gain_db=4.0,
         max_transient_gain_db=4.0,
     )
 
+    # 4) Texture remains experimental and is allowed to select NONE.
+    #    It is evaluated after dynamics so it cannot hide dynamic mismatch.
+    texture = match_texture(reference, final_dynamics.audio)
+
     return AdvancedMatchResult(
-        audio=final_dynamics.audio,
+        audio=texture.audio,
         initial_eq=initial_eq,
-        dynamics=dynamics,
-        texture=texture,
-        residual_eq=residual_eq,
+        multiband=multiband,
         final_dynamics=final_dynamics,
+        texture=texture,
     )
