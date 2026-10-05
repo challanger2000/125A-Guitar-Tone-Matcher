@@ -173,3 +173,50 @@ Current conclusion:
 - the improved target performance produces the strongest real two-performance result so far;
 - spectral matching is already highly effective;
 - the remaining measurable gap is dominated more by dynamics/attack than by the current texture descriptors.
+
+
+## 2026-10-05 — paired DI / amp oracle
+
+Purpose:
+- evaluate the matcher against the same performance before and after a real amp/processing chain;
+- separate source-performance behaviour from processing behaviour.
+
+Local fixtures:
+- DI and processed amp version of the same performance;
+- 44.1 kHz;
+- 192 seconds;
+- files remain local/private.
+
+Observed source relationship:
+- DI crest factor: approximately **21.02 dB**;
+- amp crest factor: approximately **18.91 dB**;
+- active 40 ms short-time dynamic range:
+  - DI: approximately **15.80 dB**;
+  - amp: approximately **4.56 dB**;
+- peak-to-body transient index:
+  - DI: approximately **13.07 dB**;
+  - amp: approximately **10.30 dB**;
+- initial level-independent spectral-envelope error: approximately **8.63 dB**.
+
+Current research chain:
+- after initial EQ match:
+  - spectral error: approximately **2.89 dB**;
+  - active dynamic range: approximately **15.28 dB**;
+  - transient index: approximately **13.05 dB**;
+- after upgraded gated quantile dynamics/transient stage:
+  - spectral error: approximately **2.85 dB**;
+  - active dynamic range: approximately **5.49 dB**;
+  - transient index: approximately **12.80 dB**;
+  - inferred dynamic-range ratio: approximately **0.30**;
+  - transient controller request: approximately **-2.76 dB**;
+- after bounded residual EQ:
+  - spectral error: approximately **1.78 dB**;
+  - active dynamic range: approximately **6.83 dB**;
+  - transient index: approximately **12.88 dB**.
+
+Interpretation:
+- the paired fixture proves that amp processing changes far more than long-term spectral shape;
+- the former dynamics-controller floor of 0.60 was invalid for this material and has been removed;
+- quantile-distribution matching substantially reproduces the reference macro-dynamic distribution without requiring aligned performance;
+- transient reduction remains under-achieved and is the next clear subsystem to improve;
+- residual EQ can perturb dynamics again, so the final stage ordering / iteration policy still needs optimisation.
