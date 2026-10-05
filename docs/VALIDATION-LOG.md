@@ -283,3 +283,40 @@ Decision:
 
 Engineering consequence:
 - do not claim multiband dynamics as a general improvement until it wins across multiple reference windows and independent fixtures.
+
+
+## 2026-10-05 — robust reference-window selection, first real test
+
+Reference:
+- 192-second processed Amaranthe-style amp track.
+
+Target:
+- separate user guitar performance.
+
+Selector:
+- 20-second windows;
+- 10-second hop;
+- top 3 active windows combined into one reference profile.
+
+Selected windows in the first real test:
+- approximately **40–60 s**;
+- approximately **100–120 s**;
+- approximately **170–190 s**.
+
+The three selected windows had closely clustered short-time dynamics around **2.67–2.73 dB**, showing that the selector was internally consistent rather than choosing arbitrary sections.
+
+Against the resulting combined reference profile:
+
+- EQ-only dynamic-range error: approximately **1.23 dB**;
+- EQ + multiband + transient error: approximately **0.69 dB**;
+- spectral error remained essentially unchanged at approximately **0.94 dB**;
+- transient error improved modestly from approximately **1.12 dB** to **1.03 dB**.
+
+Interpretation:
+- multi-window profiling reduces reference-section sensitivity compared with using one arbitrary segment;
+- however, the current selector still includes spectral similarity in its score;
+- this risks preferring reference windows that already resemble the target tone instead of selecting primarily by performance/articulation type.
+
+Decision:
+- keep the multi-window framework;
+- revise the window score so articulation/density descriptors drive selection and tonal descriptors remain the target to be matched, not the criterion used to choose the reference passage.
