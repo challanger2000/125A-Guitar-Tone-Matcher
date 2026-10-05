@@ -74,14 +74,11 @@ def match_multiband_dynamics(
     *,
     bands: tuple[tuple[float, float], ...] = (
         (60.0, 120.0),
-        (120.0, 180.0),
-        (180.0, 250.0),
-        (250.0, 400.0),
-        (400.0, 700.0),
-        (700.0, 1200.0),
-        (1200.0, 2500.0),
-        (2500.0, 4500.0),
-        (4500.0, 7000.0),
+        (120.0, 250.0),
+        (250.0, 500.0),
+        (500.0, 1000.0),
+        (1000.0, 2500.0),
+        (2500.0, 6000.0),
     ),
     max_gain_db: float = 10.0,
 ) -> MultibandDynamicsResult:
@@ -99,23 +96,11 @@ def match_multiband_dynamics(
         ref_band = _split_band(r, sr, low, high)
         tgt_band = _split_band(x, sr, low, high)
 
-        # Low palm-mute fundamentals should breathe more freely than the
-        # upper low-mids/presence bands. The limits are intentionally band-
-        # dependent because paired DI/amp measurements show much weaker
-        # compression below 120 Hz and progressively stronger compression
-        # above roughly 250 Hz.
-        if high <= 120.0:
-            band_max_gain_db = min(max_gain_db, 4.0)
-        elif high <= 250.0:
-            band_max_gain_db = min(max_gain_db, 7.0)
-        else:
-            band_max_gain_db = max_gain_db
-
         gain_db, ref_range, tgt_range, ratio = _band_gain_db(
             ref_band,
             tgt_band,
             sr,
-            band_max_gain_db,
+            max_gain_db,
         )
         gain = np.power(10.0, gain_db / 20.0)
         wet += tgt_band * gain[:, None]
