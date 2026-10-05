@@ -17,7 +17,14 @@ def test_multiband_match_can_reduce_midband_dynamic_error() -> None:
     sos = butter(4, [250.0, 1000.0], btype="bandpass", fs=sr, output="sos")
     mid = sosfilt(sos, x)
 
-    target = x + 2.5 * mid
+    # Impose a real time-varying midband dynamics mismatch. Pure stationary
+    # level scaling is intentionally ignored by the dynamics matcher.
+    envelope = np.ones(n)
+    block = sr // 4
+    for start in range(0, n, block * 2):
+        envelope[start : min(n, start + block)] = 4.0
+
+    target = x + 2.5 * mid * envelope
     reference = x + 0.55 * np.tanh(4.0 * mid)
 
     reference_mid = sosfilt(sos, reference)
