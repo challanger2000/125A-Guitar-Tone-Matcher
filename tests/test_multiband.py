@@ -20,9 +20,12 @@ def test_multiband_match_can_reduce_midband_dynamic_error() -> None:
     target = x + 2.5 * mid
     reference = x + 0.55 * np.tanh(4.0 * mid)
 
+    reference_mid = sosfilt(sos, reference)
+    target_mid = sosfilt(sos, target)
+
     before = abs(
-        robust_dynamic_range_db(reference, sr, window_ms=20.0)
-        - robust_dynamic_range_db(target, sr, window_ms=20.0)
+        robust_dynamic_range_db(reference_mid, sr, window_ms=20.0)
+        - robust_dynamic_range_db(target_mid, sr, window_ms=20.0)
     )
 
     result = match_multiband_dynamics(
@@ -30,9 +33,11 @@ def test_multiband_match_can_reduce_midband_dynamic_error() -> None:
         AudioBuffer(target[:, None], sr),
     )
 
+    result_mid = sosfilt(sos, result.audio.data[:, 0])
+
     after = abs(
-        robust_dynamic_range_db(reference, sr, window_ms=20.0)
-        - robust_dynamic_range_db(result.audio.data[:, 0], sr, window_ms=20.0)
+        robust_dynamic_range_db(reference_mid, sr, window_ms=20.0)
+        - robust_dynamic_range_db(result_mid, sr, window_ms=20.0)
     )
 
     assert after < before
