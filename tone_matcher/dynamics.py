@@ -148,6 +148,16 @@ def match_dynamics(
         raise ValueError("Reference and target must have identical sample rates")
 
     sr = target.sample_rate
+
+    # Exact identity is a hard neutral case. Avoid numerical envelope/smoothing
+    # differences causing a meaningless sub-hundredth-dB transient correction.
+    if reference.data.shape == target.data.shape and np.array_equal(reference.data, target.data):
+        return DynamicsMatchResult(
+            audio=AudioBuffer(data=np.asarray(target.data, dtype=np.float64).copy(), sample_rate=sr),
+            dynamic_scale=1.0,
+            transient_gain_db=0.0,
+        )
+
     dynamic_gain_db, dynamic_scale = _quantile_dynamic_gain_db(
         reference.data,
         target.data,
