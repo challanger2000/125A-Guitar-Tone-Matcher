@@ -355,3 +355,39 @@ Interpretation:
 - this is the first multiband version that improves dynamics materially over EQ-only while leaving already-matched bands untouched;
 - no spectral advantage is claimed from the dynamics stage;
 - the stage is retained because it adds measurable non-EQ behaviour without sacrificing the spectral match.
+
+
+## 2026-10-05 — local corpus champion-selection validation
+
+Purpose:
+- validate the adaptive EQ-only vs Full selector across several real high-gain pairings;
+- avoid overfitting conclusions to one favorable example.
+
+Pairs evaluated:
+1. Amaranthe-style amp reference -> user guitar target
+2. Guitar1 amp-sim reference -> user guitar target
+3. Amaranthe-style amp reference -> Guitar1 amp-sim target
+4. Guitar1 amp-sim reference -> Amaranthe-style amp target
+5. paired Amaranthe DI -> Amaranthe amp oracle
+
+Observed champion decisions:
+
+| Pair | EQ-only score | Full score | Selected |
+|---|---:|---:|---|
+| Amaranthe amp -> user guitar | 1.913 | 1.486 | **Full** |
+| Guitar1 -> user guitar | 2.112 | 1.238 | **Full** |
+| Amaranthe amp -> Guitar1 | 3.688 | 1.826 | **Full** |
+| Guitar1 -> Amaranthe amp | 2.101 | 1.767 | **EQ-only** (safety guard rejects Full due to fizz regression) |
+| Amaranthe DI -> Amaranthe amp | 10.305 | 22.892 | **EQ-only** |
+
+Interpretation:
+- Full processing is not universally superior;
+- on three independent amp-to-amp style-transfer cases Full clearly improves the aggregate match;
+- on one reverse-direction amp-to-amp case Full lowers the aggregate score but worsens high-band flatness beyond the allowed safety margin, so EQ-only is correctly retained;
+- on the true DI-to-amp oracle the current Full chain performs substantially worse, confirming that this research matcher is not an amp-modeling network and should not be marketed as one;
+- the adaptive champion selector is therefore essential, not optional.
+
+Current product-level implication:
+- the system should behave as an adaptive tone-transfer processor with EQ as the guaranteed baseline;
+- non-EQ stages are opportunistic improvements, never mandatory;
+- separate DI->amp modeling would require a dedicated nonlinear/ML architecture.
